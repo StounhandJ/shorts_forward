@@ -2,8 +2,8 @@ package utils
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
-	"regexp"
 )
 
 func RandomElement[T any](s []T) (T, error) {
@@ -25,9 +25,22 @@ func StringNotEmptyCoalesce(args ...string) string {
 	return ""
 }
 
-func SanitizeFileName(name string) string {
-	// Replace invalid Windows characters with underscores
-	re := regexp.MustCompile(`[\/\?<>\\:\*\|"]`)
+func FormatSecondsToMMSS(sec int) string {
+	minutes := sec / 60
+	seconds := sec % 60
 
-	return re.ReplaceAllString(name, "_")
+	return fmt.Sprintf("%02d:%02d", minutes, seconds)
+}
+
+func FormatBigInt(n int) string {
+	switch {
+	case n < 1000:
+		return fmt.Sprintf("%d", n)
+	case n < 1_000_000:
+		return fmt.Sprintf("%.1fK", float64(n)/1000.0)
+	case n < 1_000_000_000:
+		return fmt.Sprintf("%.1fM", float64(n)/1_000_000.0)
+	default:
+		return fmt.Sprintf("%.1fB", float64(n)/1_000_000_000.0)
+	}
 }

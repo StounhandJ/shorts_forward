@@ -45,24 +45,12 @@ func (d downloader) Download(url string) (*downloaders.Video, error) {
 		return nil, err
 	}
 
-	video := downloaders.Video{}
-	ok := false
-
-	if video.Title, ok = findMetaContent(data, "og:title"); !ok {
-		video.Title = "instagram"
+	video, ok := extractFirstVideoURL(string(data))
+	if !ok {
+		return nil, errors.New("html не расшифрован")
 	}
 
-	if video.VideoURL, ok = extractFirstVideoURL(string(data)); !ok {
-		return nil, errors.New("не найдено VideoURL")
-	}
-
-	if video.ThumbnailURL, ok = findMetaContent(data, "og:image"); !ok {
-		return nil, errors.New("не найдено ThumbnailURL")
-	}
-
-	video.MimeType = "video/mp4"
-
-	return &video, nil
+	return video, nil
 }
 
 func (downloader) Valid(url string) bool {

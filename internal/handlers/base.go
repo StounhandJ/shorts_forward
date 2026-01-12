@@ -3,10 +3,10 @@ package handlers
 import (
 	"context"
 	"fmt"
-	"html"
 	"strings"
 
 	downloadersService "github.com/StounhandJ/shorts_forward/internal/downloaders"
+	"github.com/StounhandJ/shorts_forward/internal/utils"
 	telegramUtils "github.com/StounhandJ/shorts_forward/internal/utils/telegram"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
@@ -51,7 +51,7 @@ func (h handler) InlineVideo(ctx *th.Context, query telego.InlineQuery) error {
 	}
 
 	// Получение данных о видео
-	metadata, err := downloader.Download(url)
+	metadataVideo, err := downloader.Download(url)
 	if err != nil {
 		results := []telego.InlineQueryResult{}
 
@@ -63,10 +63,10 @@ func (h handler) InlineVideo(ctx *th.Context, query telego.InlineQuery) error {
 	}
 
 	// Тестовый вариант с подзагрузкой ролика
-	if metadata.VideoReader != nil {
+	if metadataVideo.VideoReader != nil {
 		msg, err := ctx.Bot().SendVideo(context.Background(), &telego.SendVideoParams{
 			ChatID: telego.ChatID{ID: 969674918},
-			Video:  tu.FileFromReader(*metadata.VideoReader, "example.mp4"),
+			Video:  tu.FileFromReader(*metadataVideo.VideoReader, "example.mp4"),
 		})
 		if err != nil {
 			return err
@@ -78,8 +78,8 @@ func (h handler) InlineVideo(ctx *th.Context, query telego.InlineQuery) error {
 				&telego.InlineQueryResultCachedVideo{
 					Type:                  telego.ResultTypeVideo,
 					ID:                    msg.Video.FileID,
-					Title:                 metadata.Title,
-					Caption:               metadata.Title,
+					Title:                 metadataVideo.Title,
+					Caption:               metadataVideo.Title,
 					VideoFileID:           msg.Video.FileID,
 					ShowCaptionAboveMedia: true,
 				},
@@ -88,19 +88,22 @@ func (h handler) InlineVideo(ctx *th.Context, query telego.InlineQuery) error {
 		})
 	}
 
+	mainInfo := metadataVideo.MainInfo()
+
 	return ctx.Bot().AnswerInlineQuery(ctx, &telego.AnswerInlineQueryParams{
 		InlineQueryID: query.ID,
 		Results: []telego.InlineQueryResult{
 			&telego.InlineQueryResultVideo{
 				Type:                  telego.ResultTypeVideo,
-				ID:                    metadata.VideoURL[:min(64, len(metadata.VideoURL))],
-				Title:                 metadata.Title,
-				ParseMode:             "HTML",
-				Caption:               fmt.Sprintf("%s\n<a href=\"%s\">Оригинал</a>", html.EscapeString(metadata.Title), url),
-				VideoURL:              metadata.VideoURL,
-				ThumbnailURL:          metadata.ThumbnailURL,
-				MimeType:              metadata.MimeType,
+				ID:                    metadataVideo.VideoURL[:min(64, len(metadataVideo.VideoURL))],
+				Title:                 metadataVideo.Title,
+				Caption:               fmt.Sprintf("%s\n%s", metadataVideo.Title, mainInfo),
+				VideoURL:              metadataVideo.VideoURL,
+				ThumbnailURL:          metadataVideo.ThumbnailURL,
+				MimeType:              metadataVideo.MimeType,
 				ShowCaptionAboveMedia: true,
+				Description:           fmt.Sprintf("%s %s", utils.FormatSecondsToMMSS(metadataVideo.Duration), mainInfo),
+				ReplyMarkup:           tu.InlineKeyboard(tu.InlineKeyboardRow(tu.InlineKeyboardButton("Оригинал").WithURL(url))),
 			},
 		},
 		CacheTime: 300,

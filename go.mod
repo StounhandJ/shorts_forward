@@ -4,6 +4,8 @@ go 1.25.5
 
 require (
 	github.com/goccy/go-yaml v1.19.2
+	github.com/kkdai/youtube/v2 v2.10.5
+	github.com/mailru/easyjson v0.9.1
 	github.com/mymmrac/telego v1.5.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.11.1
@@ -23,7 +25,7 @@ require (
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
 	github.com/google/pprof v0.0.0-20250208200701-d0013a598941 // indirect
 	github.com/grbit/go-json v0.11.0 // indirect
-	github.com/kkdai/youtube/v2 v2.10.5 // indirect
+	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.18.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect

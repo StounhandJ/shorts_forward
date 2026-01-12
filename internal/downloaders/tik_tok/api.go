@@ -1,16 +1,18 @@
+//go:generate easyjson api.go
 package tiktok
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
 	netUrl "net/url"
 
 	"github.com/StounhandJ/shorts_forward/internal/utils"
+	easyjson "github.com/mailru/easyjson"
 )
 
 const (
@@ -25,6 +27,7 @@ var (
 
 func fetchMetadata(client *http.Client, postUrl string) (ApiResponse, error) {
 	postUrl = fmt.Sprintf("%s?url=%s", BaseUrl, netUrl.QueryEscape(postUrl))
+	fmt.Println(postUrl)
 
 	req, err := http.NewRequestWithContext(context.TODO(), "GET", postUrl, nil)
 	if err != nil {
@@ -45,9 +48,14 @@ func fetchMetadata(client *http.Client, postUrl string) (ApiResponse, error) {
 		}
 	}()
 
+	b, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return ApiResponse{}, err
+	}
+
 	var data ApiResponse
 
-	err = json.NewDecoder(resp.Body).Decode(&data)
+	err = easyjson.Unmarshal(b, &data)
 	if err != nil {
 		return ApiResponse{}, err
 	}
@@ -66,6 +74,7 @@ func fetchMetadata(client *http.Client, postUrl string) (ApiResponse, error) {
 	return data, nil
 }
 
+// easyjson:json
 type ApiResponse struct {
 	Code          int     `json:"code,omitempty"`
 	Msg           string  `json:"msg"`

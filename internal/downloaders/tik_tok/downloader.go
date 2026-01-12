@@ -28,6 +28,9 @@ func (d downloader) Download(url string) (*downloaders.Video, error) {
 		Title:        metadata.Data.Title,
 		VideoURL:     utils.StringNotEmptyCoalesce(metadata.Data.Hdplay, metadata.Data.Play, metadata.Data.Wmplay),
 		ThumbnailURL: metadata.Data.OriginCover,
+		Duration:     metadata.Data.Duration,
+		ViewCount:    metadata.Data.PlayCount,
+		LikeCount:    metadata.Data.DiggCount,
 		MimeType:     "video/mp4",
 	}, nil
 }

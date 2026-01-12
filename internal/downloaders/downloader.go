@@ -1,6 +1,10 @@
 package downloaders
 
-import "io"
+import (
+	"io"
+
+	"github.com/StounhandJ/shorts_forward/internal/utils"
+)
 
 type IDownloader interface {
 	Download(url string) (*Video, error)
@@ -12,5 +16,21 @@ type Video struct {
 	VideoURL     string
 	ThumbnailURL string
 	MimeType     string
+	Duration     int
+	ViewCount    int
+	LikeCount    int
 	VideoReader  *io.ReadCloser
+}
+
+func (v Video) MainInfo() string {
+	var result string
+	if v.ViewCount != 0 {
+		result = utils.FormatBigInt(v.ViewCount) + "👁️ "
+	}
+
+	if v.LikeCount != 0 {
+		result += utils.FormatBigInt(v.LikeCount) + "🤍"
+	}
+
+	return result
 }
