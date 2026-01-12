@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"fmt"
+	"html"
 	"strings"
 
 	downloadersService "github.com/StounhandJ/shorts_forward/internal/downloaders"
@@ -77,11 +79,12 @@ func (h handler) InlineVideo(ctx *th.Context, query telego.InlineQuery) error {
 					Type:                  telego.ResultTypeVideo,
 					ID:                    msg.Video.FileID,
 					Title:                 metadata.Title,
+					Caption:               metadata.Title,
 					VideoFileID:           msg.Video.FileID,
 					ShowCaptionAboveMedia: true,
 				},
 			},
-			CacheTime: 0,
+			CacheTime: 300,
 		})
 	}
 
@@ -92,13 +95,15 @@ func (h handler) InlineVideo(ctx *th.Context, query telego.InlineQuery) error {
 				Type:                  telego.ResultTypeVideo,
 				ID:                    metadata.VideoURL[:min(64, len(metadata.VideoURL))],
 				Title:                 metadata.Title,
+				ParseMode:             "HTML",
+				Caption:               fmt.Sprintf("%s\n<a href=\"%s\">Оригинал</a>", html.EscapeString(metadata.Title), url),
 				VideoURL:              metadata.VideoURL,
 				ThumbnailURL:          metadata.ThumbnailURL,
 				MimeType:              metadata.MimeType,
 				ShowCaptionAboveMedia: true,
 			},
 		},
-		CacheTime: 0,
+		CacheTime: 300,
 	})
 }
 

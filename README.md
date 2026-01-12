@@ -54,12 +54,12 @@ APP_TG_BOT_TOKEN=your_telegram_bot_token
 
 В любом чате Telegram:
 
-Использовать @botname
+Использовать @botname   
 ![](docs/search.png)
 
-Выбор из указанных вариантов
+Выбор из указанных вариантов   
 ![](docs/search-result.png)
 
-После выбора в чат отправится видео
+После выбора в чат отправится видео   
 ![](docs/result.png)
 
