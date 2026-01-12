@@ -1,0 +1,10 @@
+services:
+  shorts_forward:
+    image: ghcr.io/stounhandj/shorts_forward:latest
+    container_name: shorts_forward
+    restart: always
+    environment:
+      - env=prod
+      - APP_TG_BOT_TOKEN=${APP_TG_BOT_TOKEN}
+    volumes:
+      - ./assets:/assets:ro

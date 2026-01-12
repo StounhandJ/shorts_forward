@@ -1,0 +1,64 @@
+name: CI - build & push to GHCR & deploy
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  packages: write   
+
+jobs:
+  build-and-push-app:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Determine lowercased repository
+        id: repo
+        run: |
+          echo "repository=${{ github.repository }}" | tr '[:upper:]' '[:lower:]' >> $GITHUB_OUTPUT
+          IN="${{ github.repository }}"
+          arrIN=(${IN//// })
+          echo "image_name=${arrIN[1]}"  | tr '[:upper:]' '[:lower:]' >> $GITHUB_OUTPUT
+
+      - name: Determine image tags
+        id: tag
+        run: |
+          # если main -> tag=latest, иначе tag=<branch-sanitized>
+          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          else
+            BRANCH=${GITHUB_REF#refs/heads/}
+            # sanitize: replace / -> -, lowercase, remove/replace invalid chars
+            SAFE_BRANCH=$(echo "$BRANCH" | tr '/' '-' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9._-]/-/g')
+            echo "tag=${SAFE_BRANCH}" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: whoan/docker-build-with-cache-action@v8
+        with:
+          username: ${{ github.actor }}
+          password: "${{ secrets.GITHUB_TOKEN }}"
+          registry: ghcr.io
+          image_name: ${{ steps.repo.outputs.repository }}
+          dockerfile: Dockerfile
+
+  deploy:
+    needs: 
+      - build-and-push-app
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to server over SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASSWORD }}
+          script: |
+            cd /root/shorts_forward
+            git pull
+            docker login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+            make up

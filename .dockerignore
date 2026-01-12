@@ -1,0 +1,6 @@
+deploy
+docker-compose.*
+README.md
+Makefile
+.golangci.yml
+.gitignore

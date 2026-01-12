@@ -1,0 +1,4 @@
+Application:
+  LogLevel: "info"
+  # TGBotToken: "TGBotToken"
+  # ProxyURL: "http://127.0.0.1:12334"

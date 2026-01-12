@@ -1,0 +1,12 @@
+services:
+  shorts_forward:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: shorts_forward
+    restart: always
+    environment:
+      - env=prod
+      - APP_TG_BOT_TOKEN=${APP_TG_BOT_TOKEN}
+    volumes:
+      - ./assets:/assets:ro
