@@ -69,8 +69,8 @@ func (h handler) InlineVideo(ctx *th.Context, query telego.InlineQuery) error {
 			&telego.InlineQueryResultVideo{
 				Type:                  telego.ResultTypeVideo,
 				ID:                    metadataVideo.VideoURL[:min(64, len(metadataVideo.VideoURL))],
-				Title:                 metadataVideo.Title,
-				Caption:               fmt.Sprintf("%s\n%s", metadataVideo.Title, mainInfo),
+				Title:                 metadataVideo.Title[:min(200, len(metadataVideo.Title))],
+				Caption:               fmt.Sprintf("%s\n%s", metadataVideo.Title[:min(900, len(metadataVideo.Title))], mainInfo),
 				VideoURL:              metadataVideo.VideoURL,
 				ThumbnailURL:          metadataVideo.ThumbnailURL,
 				MimeType:              metadataVideo.MimeType,
