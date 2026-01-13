@@ -120,6 +120,10 @@ func extractFirstVideoURL(html string) (*downloaders.Video, bool) {
 		}
 	}
 
+	if videoURL == "" {
+		return nil, false
+	}
+
 	// Найдём первый непустой url img
 	var thumbnailURL string
 	for _, v := range obj.Items[0].ImageVersions.Candidates {
@@ -130,8 +134,13 @@ func extractFirstVideoURL(html string) (*downloaders.Video, bool) {
 		}
 	}
 
+	title := "Instagram"
+	if obj.Items[0].Caption.Text != "" {
+		title = obj.Items[0].Caption.Text
+	}
+
 	return &downloaders.Video{
-		Title:        obj.Items[0].Caption.Text,
+		Title:        title,
 		VideoURL:     videoURL,
 		MimeType:     "video/mp4",
 		ThumbnailURL: thumbnailURL,
@@ -142,7 +151,7 @@ func extractFirstVideoURL(html string) (*downloaders.Video, bool) {
 }
 
 func extractDurationSeconds(s string) int {
-	re := regexp.MustCompile(`duration="PT([0-9]+)(?:\\.[0-9]+)?S"`)
+	re := regexp.MustCompile(`duration="PT([0-9]+)(?:\.[0-9]+)?S"`)
 
 	m := re.FindStringSubmatch(s)
 	if len(m) < 2 {
