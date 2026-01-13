@@ -12,6 +12,8 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
+var GlobalCounter = 0
+
 // Стартовое сообщение / Главное меню
 func (h handler) StartCommand(ctx *th.Context, update telego.Update) error {
 	telegramUtils.SendMessage(ctx, false, false, update, "Это шортс бот by @StounhandJ\ngithub.com/StounhandJ")
@@ -61,8 +63,12 @@ func (h handler) InlineVideo(ctx *th.Context, query telego.InlineQuery) error {
 		})
 	}
 
-	mainInfo := metadataVideo.MainInfo()
+	GlobalCounter += 1
+	if GlobalCounter%10 == 0 {
+		utils.Log.Infof("Количество запрошенных роликов %d", GlobalCounter)
+	}
 
+	mainInfo := metadataVideo.MainInfo()
 	return ctx.Bot().AnswerInlineQuery(ctx, &telego.AnswerInlineQueryParams{
 		InlineQueryID: query.ID,
 		Results: []telego.InlineQueryResult{
