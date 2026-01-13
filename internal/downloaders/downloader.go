@@ -1,8 +1,6 @@
 package downloaders
 
 import (
-	"io"
-
 	"github.com/StounhandJ/shorts_forward/internal/utils"
 )
 
@@ -19,7 +17,6 @@ type Video struct {
 	Duration     int
 	ViewCount    int
 	LikeCount    int
-	VideoReader  *io.ReadCloser
 }
 
 func (v Video) MainInfo() string {

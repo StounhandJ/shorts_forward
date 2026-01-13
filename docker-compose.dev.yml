@@ -7,6 +7,9 @@ services:
     restart: always
     environment:
       - env=prod
-      - APP_TG_BOT_TOKEN=${APP_TG_BOT_TOKEN}
+      - APP_TG_BOT_TOKEN=${TG_BOT_TOKEN}
+      - APP_DOMEN=${DOMEN}
+    ports:
+      - 992:992
     volumes:
       - ./assets:/assets:ro

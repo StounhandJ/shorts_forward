@@ -1,4 +1,6 @@
 Application:
   LogLevel: "info"
+  Port: 992
+  Domen: "http://shortsforward.duckdns.org"
   # TGBotToken: "TGBotToken"
   # ProxyURL: "http://127.0.0.1:12334"

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -59,32 +58,6 @@ func (h handler) InlineVideo(ctx *th.Context, query telego.InlineQuery) error {
 			InlineQueryID: query.ID,
 			Results:       results,
 			CacheTime:     0,
-		})
-	}
-
-	// Тестовый вариант с подзагрузкой ролика
-	if metadataVideo.VideoReader != nil {
-		msg, err := ctx.Bot().SendVideo(context.Background(), &telego.SendVideoParams{
-			ChatID: telego.ChatID{ID: 969674918},
-			Video:  tu.FileFromReader(*metadataVideo.VideoReader, "example.mp4"),
-		})
-		if err != nil {
-			return err
-		}
-
-		return ctx.Bot().AnswerInlineQuery(ctx, &telego.AnswerInlineQueryParams{
-			InlineQueryID: query.ID,
-			Results: []telego.InlineQueryResult{
-				&telego.InlineQueryResultCachedVideo{
-					Type:                  telego.ResultTypeVideo,
-					ID:                    msg.Video.FileID,
-					Title:                 metadataVideo.Title,
-					Caption:               metadataVideo.Title,
-					VideoFileID:           msg.Video.FileID,
-					ShowCaptionAboveMedia: true,
-				},
-			},
-			CacheTime: 300,
 		})
 	}
 

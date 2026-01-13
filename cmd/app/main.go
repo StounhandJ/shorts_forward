@@ -7,16 +7,19 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	"github.com/StounhandJ/shorts_forward/internal/config"
 	downloadersService "github.com/StounhandJ/shorts_forward/internal/downloaders"
 	"github.com/StounhandJ/shorts_forward/internal/downloaders/instagram"
 	tiktok "github.com/StounhandJ/shorts_forward/internal/downloaders/tik_tok"
+	"github.com/StounhandJ/shorts_forward/internal/downloaders/youtube"
 	"github.com/StounhandJ/shorts_forward/internal/handlers"
 	"github.com/StounhandJ/shorts_forward/internal/utils"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
+	"github.com/valyala/fasthttp"
 )
 
 var cfg config.Config
@@ -68,8 +71,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	youtubeDownloader := youtube.New(&client, cfg.Application.Domen)
 	handler := handlers.NewHandler([]downloadersService.IDownloader{
-		// youtube.New(&client), // TODO ТГ не может обработать ссылки на CDN ютуба, можно через себя транслировать
+		youtubeDownloader, // TODO ТГ не может обработать ссылки на CDN ютуба, можно через себя транслировать
 		instagram.New(&client),
 		tiktok.New(&client),
 	})
@@ -83,12 +87,20 @@ func main() {
 
 	go func() {
 		fmt.Printf(
-			"TG БОТ ID=%d имя=%s username=@%s",
+			"TG БОТ ID=%d имя=%s username=@%s\n",
 			user.ID,
 			user.FirstName,
 			user.Username,
 		)
 		utils.Log.Fatal(bh.Start())
+	}()
+
+	go func() {
+		fmt.Printf(
+			"API Прослушивание порта %d\n", cfg.Application.Port,
+		)
+
+		utils.Log.Fatal(fasthttp.ListenAndServe(":"+strconv.Itoa(cfg.Application.Port), youtubeDownloader.Handler))
 	}()
 	//---------------//
 
