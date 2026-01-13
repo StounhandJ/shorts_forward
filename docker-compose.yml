@@ -10,4 +10,4 @@ services:
     ports:
       - 80:992
     volumes:
-      - ./assets:/assets:ro
+      - ./assets:/assets

@@ -13,7 +13,10 @@ func (d downloader) Handler(ctx *fasthttp.RequestCtx) {
 	// получаем параметр src
 	src := string(ctx.QueryArgs().Peek("src"))
 	if src == "" {
-		ctx.Error("missing src query", http.StatusBadRequest)
+		ctx.Response.Header.Set("Content-Type", "image/webp")
+		ctx.Response.Header.Set("Content-Disposition", "inline")
+		ctx.SendFile("./assets/gorila.webp")
+
 		return
 	}
 
