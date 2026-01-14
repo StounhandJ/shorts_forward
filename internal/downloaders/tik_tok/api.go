@@ -27,7 +27,6 @@ var (
 
 func fetchMetadata(client *http.Client, postUrl string) (ApiResponse, error) {
 	postUrl = fmt.Sprintf("%s?url=%s", BaseUrl, netUrl.QueryEscape(postUrl))
-	fmt.Println(postUrl)
 
 	req, err := http.NewRequestWithContext(context.TODO(), "GET", postUrl, nil)
 	if err != nil {

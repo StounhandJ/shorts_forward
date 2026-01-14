@@ -4,7 +4,6 @@ package instagram
 
 import (
 	json "encoding/json"
-
 	easyjson "github.com/mailru/easyjson"
 	jlexer "github.com/mailru/easyjson/jlexer"
 	jwriter "github.com/mailru/easyjson/jwriter"
@@ -144,11 +143,13 @@ func easyjsonF42599adDecodeGithubComStounhandJShortsForwardInternalDownloadersIn
 				if out.VideoVersions == nil {
 					if !in.IsDelim(']') {
 						out.VideoVersions = make([]struct {
-							URL string `json:"url"`
-						}, 0, 4)
+							URL  string `json:"url"`
+							Type int    `json:"type"`
+						}, 0, 2)
 					} else {
 						out.VideoVersions = []struct {
-							URL string `json:"url"`
+							URL  string `json:"url"`
+							Type int    `json:"type"`
 						}{}
 					}
 				} else {
@@ -156,7 +157,8 @@ func easyjsonF42599adDecodeGithubComStounhandJShortsForwardInternalDownloadersIn
 				}
 				for !in.IsDelim(']') {
 					var v4 struct {
-						URL string `json:"url"`
+						URL  string `json:"url"`
+						Type int    `json:"type"`
 					}
 					easyjsonF42599adDecode(in, &v4)
 					out.VideoVersions = append(out.VideoVersions, v4)
@@ -347,7 +349,7 @@ func easyjsonF42599adDecode1(in *jlexer.Lexer, out *struct {
 					var v7 struct {
 						URL string `json:"url"`
 					}
-					easyjsonF42599adDecode(in, &v7)
+					easyjsonF42599adDecode3(in, &v7)
 					out.Candidates = append(out.Candidates, v7)
 					in.WantComma()
 				}
@@ -382,14 +384,14 @@ func easyjsonF42599adEncode1(out *jwriter.Writer, in struct {
 				if v8 > 0 {
 					out.RawByte(',')
 				}
-				easyjsonF42599adEncode(out, v9)
+				easyjsonF42599adEncode3(out, v9)
 			}
 			out.RawByte(']')
 		}
 	}
 	out.RawByte('}')
 }
-func easyjsonF42599adDecode(in *jlexer.Lexer, out *struct {
+func easyjsonF42599adDecode3(in *jlexer.Lexer, out *struct {
 	URL string `json:"url"`
 }) {
 	isTopLevel := in.IsStart()
@@ -421,7 +423,7 @@ func easyjsonF42599adDecode(in *jlexer.Lexer, out *struct {
 		in.Consumed()
 	}
 }
-func easyjsonF42599adEncode(out *jwriter.Writer, in struct {
+func easyjsonF42599adEncode3(out *jwriter.Writer, in struct {
 	URL string `json:"url"`
 }) {
 	out.RawByte('{')
@@ -431,6 +433,64 @@ func easyjsonF42599adEncode(out *jwriter.Writer, in struct {
 		const prefix string = ",\"url\":"
 		out.RawString(prefix[1:])
 		out.String(string(in.URL))
+	}
+	out.RawByte('}')
+}
+func easyjsonF42599adDecode(in *jlexer.Lexer, out *struct {
+	URL  string `json:"url"`
+	Type int    `json:"type"`
+}) {
+	isTopLevel := in.IsStart()
+	if in.IsNull() {
+		if isTopLevel {
+			in.Consumed()
+		}
+		in.Skip()
+		return
+	}
+	in.Delim('{')
+	for !in.IsDelim('}') {
+		key := in.UnsafeFieldName(false)
+		in.WantColon()
+		switch key {
+		case "url":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.URL = string(in.String())
+			}
+		case "type":
+			if in.IsNull() {
+				in.Skip()
+			} else {
+				out.Type = int(in.Int())
+			}
+		default:
+			in.SkipRecursive()
+		}
+		in.WantComma()
+	}
+	in.Delim('}')
+	if isTopLevel {
+		in.Consumed()
+	}
+}
+func easyjsonF42599adEncode(out *jwriter.Writer, in struct {
+	URL  string `json:"url"`
+	Type int    `json:"type"`
+}) {
+	out.RawByte('{')
+	first := true
+	_ = first
+	{
+		const prefix string = ",\"url\":"
+		out.RawString(prefix[1:])
+		out.String(string(in.URL))
+	}
+	{
+		const prefix string = ",\"type\":"
+		out.RawString(prefix)
+		out.Int(int(in.Type))
 	}
 	out.RawByte('}')
 }

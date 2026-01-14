@@ -2,7 +2,6 @@
 package instagram
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -10,6 +9,7 @@ import (
 	"github.com/mailru/easyjson"
 
 	"github.com/StounhandJ/shorts_forward/internal/downloaders"
+	"github.com/StounhandJ/shorts_forward/internal/utils"
 )
 
 // videoData описывает интересующие нас поля из JSON
@@ -18,7 +18,8 @@ import (
 type videoData struct {
 	Code          string `json:"code"`
 	VideoVersions []struct {
-		URL string `json:"url"`
+		URL  string `json:"url"`
+		Type int    `json:"type"`
 	} `json:"video_versions"`
 	ImageVersions struct {
 		Candidates []struct {
@@ -103,7 +104,8 @@ func extractFirstVideoURL(html string) (*downloaders.Video, bool) {
 
 	var obj videoObject
 	if err := easyjson.Unmarshal([]byte(html[start:end+1]), &obj); err != nil {
-		fmt.Println("json unmarshal error:", err)
+		utils.Log.Error("json unmarshal instagram videoObject error:", err)
+		return nil, false
 	}
 
 	if len(obj.Items) == 0 {

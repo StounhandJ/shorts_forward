@@ -4,12 +4,10 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/StounhandJ/shorts_forward/internal/utils"
 	"github.com/valyala/fasthttp"
 )
 
 func (d downloader) Handler(ctx *fasthttp.RequestCtx) {
-	utils.Log.Info(string(ctx.Request.RequestURI()))
 	// получаем параметр src
 	src := string(ctx.QueryArgs().Peek("src"))
 	if src == "" {
