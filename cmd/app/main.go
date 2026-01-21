@@ -71,7 +71,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	youtubeDownloader := youtube.New(&client, cfg.Application.Domen)
+	youtubeDownloader := youtube.New(&client, cfg.Application.Domain)
 	handler := handlers.NewHandler([]downloadersService.IDownloader{
 		youtubeDownloader, // TODO ТГ не может обработать ссылки на CDN ютуба, можно через себя транслировать
 		instagram.New(&client),

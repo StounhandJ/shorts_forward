@@ -12,15 +12,15 @@ import (
 
 type downloader struct {
 	client *youtube.Client
-	domen  string
+	domain string
 }
 
-func New(client *http.Client, domen string) *downloader {
+func New(client *http.Client, domain string) *downloader {
 	return &downloader{
 		client: &youtube.Client{
 			HTTPClient: client,
 		},
-		domen: domen,
+		domain: domain,
 	}
 }
 
@@ -41,7 +41,7 @@ func (d downloader) Download(url string) (*downloaders.Video, error) {
 
 	return &downloaders.Video{
 		Title:        youtubeVideo.Title,
-		VideoURL:     fmt.Sprintf("%s/?src=%s", d.domen, url),
+		VideoURL:     fmt.Sprintf("%s/video?src=%s", d.domain, url),
 		ThumbnailURL: youtubeVideo.Thumbnails[len(youtubeVideo.Thumbnails)-1].URL,
 		MimeType:     "video/mp4",
 		ViewCount:    youtubeVideo.Views,

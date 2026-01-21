@@ -6,8 +6,8 @@ services:
     environment:
       - env=prod
       - APP_TG_BOT_TOKEN=${TG_BOT_TOKEN}
-      - APP_DOMEN=${DOMEN}
+      - APP_DOMAIN=${DOMAIN}
     ports:
-      - 80:992
+      - 8888:992
     volumes:
       - ./assets:/assets

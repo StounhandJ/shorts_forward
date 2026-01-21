@@ -1,6 +1,6 @@
 Application:
   LogLevel: "info"
   Port: 992
-  # Domen: "http://example.com"
+  # Domain: "http://example.com"
   # TGBotToken: "TGBotToken"
   # ProxyURL: "http://127.0.0.1:12334"
