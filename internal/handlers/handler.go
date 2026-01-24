@@ -20,4 +20,5 @@ func (h handler) SetupRoutes(bh *th.BotHandler) {
 	bh.Handle(h.StartCommand, th.CommandEqual("start"))
 
 	bh.HandleInlineQuery(h.InlineVideo)
+	bh.Handle(h.MessageVideo, th.AnyMessage())
 }

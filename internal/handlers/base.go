@@ -54,6 +54,7 @@ func (h handler) InlineVideo(ctx *th.Context, query telego.InlineQuery) error {
 	// Получение данных о видео
 	metadataVideo, err := downloader.Download(url)
 	if err != nil {
+		utils.Log.Error(err)
 		results := []telego.InlineQueryResult{}
 
 		return ctx.Bot().AnswerInlineQuery(ctx, &telego.AnswerInlineQueryParams{
@@ -87,6 +88,66 @@ func (h handler) InlineVideo(ctx *th.Context, query telego.InlineQuery) error {
 		},
 		CacheTime: 300,
 	})
+}
+
+func (h handler) MessageVideo(ctx *th.Context, update telego.Update) error {
+	sorryText := "Сори, с этим видео что-то не так и ТГ не смог его скачать🥲\nПростите и не бейте🙏🏿"
+	url := telegramUtils.GetMessageText(update)
+	// Проверка валидности url
+	if !isAllowedShortURL(url) {
+		telegramUtils.SendMessage(ctx, false, true, update, "Поддерживается только ссылка на ролик (TikTok, Instagram, YouTube)")
+
+		return nil
+	}
+
+	var downloader downloadersService.IDownloader
+
+	for _, d := range h.downloaders {
+		if d.Valid(url) {
+			downloader = d
+
+			break
+		}
+	}
+
+	// Загрузчик не найден
+	if downloader == nil {
+		telegramUtils.SendMessage(ctx, false, true, update, "Поддерживается только TikTok, Instagram, YouTube")
+
+		return nil
+	}
+
+	loadMessage := telegramUtils.SendMessage(ctx, false, true, update, "Загрузка....")
+
+	// Получение данных о видео
+	metadataVideo, err := downloader.Download(url)
+	if err != nil {
+		utils.Log.Error(err)
+		telegramUtils.DeleteMessage(ctx, update, loadMessage)
+		telegramUtils.SendMessage(ctx, false, true, update, sorryText)
+
+		return nil
+	}
+
+	GlobalCounter += 1
+	if GlobalCounter%10 == 0 {
+		utils.Log.Infof("Количество запрошенных роликов %d", GlobalCounter)
+	}
+
+	err = telegramUtils.EditMessage(ctx, update, loadMessage,
+		fmt.Sprintf("%s\n%s", metadataVideo.Title[:min(900, len(metadataVideo.Title))], metadataVideo.MainInfo()),
+		telegramUtils.InputVideo{
+			URL:  metadataVideo.VideoURL,
+			Name: metadataVideo.Title[:min(200, len(metadataVideo.Title))],
+		},
+		tu.InlineKeyboard(tu.InlineKeyboardRow(tu.InlineKeyboardButton("Оригинал").WithURL(url))))
+	if err != nil {
+		telegramUtils.DeleteMessage(ctx, update, loadMessage)
+
+		telegramUtils.SendMessage(ctx, false, true, update, sorryText)
+	}
+
+	return nil
 }
 
 // isAllowedShortURL максимально быстрая проверка валидности url на нужные домены

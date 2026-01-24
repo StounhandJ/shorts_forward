@@ -11,8 +11,8 @@ import (
 	tu "github.com/mymmrac/telego/telegoutil"
 )
 
-type InputFile struct {
-	Data io.Reader
+type InputVideo struct {
+	URL  string
 	Name string
 }
 
@@ -100,7 +100,7 @@ func GetCurrentMessageID(update telego.Update) int {
 // Отправка сообщения
 func SendMessage(ctx *th.Context, isChat, isSendReplay bool, update telego.Update, text string, args ...any) int {
 	var meesageParam *telego.SendMessageParams
-	var inputFile *InputFile
+	var inputFile *InputVideo
 
 	sendChatID := GetUserID(update)
 	if isChat {
@@ -129,8 +129,8 @@ func SendMessage(ctx *th.Context, isChat, isSendReplay bool, update telego.Updat
 		switch v.(type) {
 		case telego.ReplyMarkup:
 			meesageParam.ReplyMarkup = v.(telego.ReplyMarkup)
-		case InputFile:
-			file := v.(InputFile)
+		case InputVideo:
+			file := v.(InputVideo)
 			inputFile = &file
 		}
 	}
@@ -139,13 +139,15 @@ func SendMessage(ctx *th.Context, isChat, isSendReplay bool, update telego.Updat
 		msg, err := ctx.Bot().SendVideo(ctx, &telego.SendVideoParams{
 			ChatID:          meesageParam.ChatID,
 			ReplyParameters: meesageParam.ReplyParameters,
+			ReplyMarkup:     meesageParam.ReplyMarkup,
 			Caption:         meesageParam.Text[:min(1024, len(meesageParam.Text))],
 			ParseMode:       meesageParam.ParseMode,
-			// Video:           tu.FileFromReader(inputFile.Data, inputFile.Name),
-			Video: tu.FileFromURL(inputFile.Name),
+			Video:           tu.FileFromURL(inputFile.URL),
 		})
 		if err != nil {
 			utils.Log.Error(err)
+
+			return 0
 		}
 
 		return msg.MessageID
@@ -175,12 +177,12 @@ func EditCurrentMessage(ctx *th.Context, update telego.Update, text string, args
 }
 
 // Редактирование указанного сообщения
-func EditMessage(ctx *th.Context, update telego.Update, messageID int, text string, args ...any) {
+func EditMessage(ctx *th.Context, update telego.Update, messageID int, text string, args ...any) error {
 	if messageID == 0 {
-		return
+		return nil
 	}
 
-	var media *telego.InputMediaPhoto
+	var inputFile *InputVideo
 
 	meesageParam := &telego.EditMessageTextParams{
 		ChatID:    tu.ID(GetUserID(update)),
@@ -197,28 +199,32 @@ func EditMessage(ctx *th.Context, update telego.Update, messageID int, text stri
 		switch v.(type) {
 		case *telego.InlineKeyboardMarkup:
 			meesageParam.ReplyMarkup = v.(*telego.InlineKeyboardMarkup)
-		case *telego.InputMediaPhoto:
-			media = v.(*telego.InputMediaPhoto)
+		case InputVideo:
+			file := v.(InputVideo)
+			inputFile = &file
 		}
 	}
 
-	if media == nil {
-		if _, err := ctx.Bot().EditMessageText(ctx, meesageParam); err != nil {
-			utils.Log.Error(err)
-		}
-	} else {
-		media.Caption = meesageParam.Text
-		media.ParseMode = meesageParam.ParseMode
-
-		if _, err := ctx.Bot().EditMessageMedia(ctx, &telego.EditMessageMediaParams{
-			ChatID:      meesageParam.ChatID,
-			MessageID:   meesageParam.MessageID,
-			ReplyMarkup: meesageParam.ReplyMarkup,
-			Media:       media,
-		}); err != nil {
-			utils.Log.Error(err)
-		}
+	if inputFile == nil {
+		_, err := ctx.Bot().EditMessageText(ctx, meesageParam)
+		return err
 	}
+
+	_, err := ctx.Bot().EditMessageMedia(ctx, &telego.EditMessageMediaParams{
+		ChatID:      meesageParam.ChatID,
+		MessageID:   meesageParam.MessageID,
+		ReplyMarkup: meesageParam.ReplyMarkup,
+		Media: &telego.InputMediaVideo{
+			Type:      telego.MediaTypeVideo,
+			Caption:   truncateText(meesageParam.Text, 1024),
+			ParseMode: meesageParam.ParseMode,
+			Media: telego.InputFile{
+				URL: inputFile.URL,
+			},
+		},
+	})
+
+	return err
 }
 
 // Удаление текущего сообщения
@@ -245,4 +251,13 @@ func AnswerCallbackQuery(ctx *th.Context, update telego.Update, text string) {
 	if err := ctx.Bot().AnswerCallbackQuery(ctx, tu.CallbackQuery(update.CallbackQuery.ID).WithText(text)); err != nil {
 		utils.Log.Error(err)
 	}
+}
+
+func truncateText(s string, limit int) string {
+	runes := []rune(s)
+	if len(runes) > limit {
+		return string(runes[:limit])
+	}
+
+	return s
 }
