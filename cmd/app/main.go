@@ -100,7 +100,12 @@ func main() {
 			"API Прослушивание порта %d\n", cfg.Application.Port,
 		)
 
-		utils.Log.Fatal(fasthttp.ListenAndServe(":"+strconv.Itoa(cfg.Application.Port), youtubeDownloader.Handler))
+		server := fasthttp.Server{
+			LogAllErrors: false,
+			Handler:      youtubeDownloader.Handler,
+		}
+
+		utils.Log.Fatal(server.ListenAndServe(":" + strconv.Itoa(cfg.Application.Port)))
 	}()
 	//---------------//
 
