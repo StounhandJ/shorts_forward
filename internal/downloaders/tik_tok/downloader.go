@@ -36,5 +36,5 @@ func (d downloader) Download(url string) (*downloaders.Video, error) {
 }
 
 func (downloader) Valid(url string) bool {
-	return strings.Contains(url, "vt.tiktok.com/")
+	return strings.Contains(url, "tiktok.com/")
 }
