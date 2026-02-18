@@ -51,5 +51,5 @@ func (d downloader) Download(url string) (*downloaders.Video, error) {
 }
 
 func (downloader) Valid(url string) bool {
-	return strings.Contains(url, "youtube.com/")
+	return strings.Contains(url, "youtube.com/") || strings.Contains(url, "youtu.be/")
 }
