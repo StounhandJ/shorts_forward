@@ -30,7 +30,7 @@ func (d downloader) Download(url string) (*downloaders.Video, error) {
 		return nil, err
 	}
 
-	video.VideoURL = fmt.Sprintf("%s/video?src=%s", d.domain, video.VideoURL)
+	video.VideoURL = fmt.Sprintf("%s/video?src=%s", d.domain, url)
 
 	return video, nil
 }

@@ -57,7 +57,7 @@ func (h httpHandler) Handler(ctx *fasthttp.RequestCtx) {
 	// Загрузчик не найден
 	if downloader == nil {
 		ctx.Error("поддерживается только TikTok, Instagram, YouTube", http.StatusBadRequest)
-		utils.Log.Error("Not supported downloader")
+		utils.Log.Error("Not supported downloader: ", src)
 
 		return
 	}
