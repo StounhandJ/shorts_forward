@@ -20,6 +20,7 @@ type downloader struct {
 func New(client *http.Client, domain string) downloaders.IDownloader {
 	return &downloader{
 		client: client,
+		domain: domain,
 	}
 }
 

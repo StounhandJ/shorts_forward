@@ -142,9 +142,9 @@ func (h handler) MessageVideo(ctx *th.Context, update telego.Update) error {
 		},
 		tu.InlineKeyboard(tu.InlineKeyboardRow(tu.InlineKeyboardButton("Оригинал").WithURL(url))))
 	if err != nil {
+		utils.Log.Error(err)
 		telegramUtils.DeleteMessage(ctx, update, loadMessage)
-
-		telegramUtils.SendMessage(ctx, false, true, update, fmt.Sprintf("%s\n%s", sorryText, metadataVideo.VideoURL))
+		telegramUtils.SendMessage(ctx, false, true, update, sorryText)
 	}
 
 	return nil
