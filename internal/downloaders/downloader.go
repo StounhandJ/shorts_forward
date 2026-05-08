@@ -1,11 +1,14 @@
 package downloaders
 
 import (
+	"io"
+
 	"github.com/StounhandJ/shorts_forward/internal/utils"
 )
 
 type IDownloader interface {
 	Download(url string) (*Video, error)
+	GetReader(url string) (io.ReadCloser, int64, error)
 	Valid(url string) bool
 }
 

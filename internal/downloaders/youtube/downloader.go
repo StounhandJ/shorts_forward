@@ -3,6 +3,7 @@ package youtube
 import (
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -15,7 +16,7 @@ type downloader struct {
 	domain string
 }
 
-func New(client *http.Client, domain string) *downloader {
+func New(client *http.Client, domain string) downloaders.IDownloader {
 	return &downloader{
 		client: &youtube.Client{
 			HTTPClient: client,
@@ -52,4 +53,23 @@ func (d downloader) Download(url string) (*downloaders.Video, error) {
 
 func (downloader) Valid(url string) bool {
 	return strings.Contains(url, "youtube.com/") || strings.Contains(url, "youtu.be/")
+}
+
+func (d downloader) GetReader(url string) (io.ReadCloser, int64, error) {
+	youtubeVideo, err := d.client.GetVideo(url)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	formats := youtubeVideo.Formats.WithAudioChannels().Type("video/mp4")
+	if len(formats) == 0 {
+		return nil, 0, err
+	}
+
+	videoReader, contentLength, err := d.client.GetStream(youtubeVideo, &formats[0])
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return videoReader, contentLength, nil
 }

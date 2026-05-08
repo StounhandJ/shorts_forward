@@ -3,6 +3,7 @@ package instagram
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -13,15 +14,27 @@ import (
 
 type downloader struct {
 	client *http.Client
+	domain string
 }
 
-func New(client *http.Client) downloaders.IDownloader {
+func New(client *http.Client, domain string) downloaders.IDownloader {
 	return &downloader{
 		client: client,
 	}
 }
 
 func (d downloader) Download(url string) (*downloaders.Video, error) {
+	video, err := d.download(url)
+	if err != nil {
+		return nil, err
+	}
+
+	video.VideoURL = fmt.Sprintf("%s/video?src=%s", d.domain, video.VideoURL)
+
+	return video, nil
+}
+
+func (d downloader) download(url string) (*downloaders.Video, error) {
 	req, err := http.NewRequestWithContext(context.TODO(), "GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -55,4 +68,24 @@ func (d downloader) Download(url string) (*downloaders.Video, error) {
 
 func (downloader) Valid(url string) bool {
 	return strings.Contains(url, "www.instagram.com/")
+}
+
+func (d downloader) GetReader(url string) (io.ReadCloser, int64, error) {
+	video, err := d.download(url)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	resp, err := http.Get(video.VideoURL)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+
+		return nil, 0, fmt.Errorf("unexpected status: %s", resp.Status)
+	}
+
+	return resp.Body, resp.ContentLength, nil
 }

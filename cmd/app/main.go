@@ -72,10 +72,17 @@ func main() {
 	}
 
 	youtubeDownloader := youtube.New(&client, cfg.Application.Domain)
+	instagramDownloader := instagram.New(&client, cfg.Application.Domain)
+	tiktokDownloader := tiktok.New(&client)
 	handler := handlers.NewHandler([]downloadersService.IDownloader{
-		youtubeDownloader, // TODO ТГ не может обработать ссылки на CDN ютуба, можно через себя транслировать
-		instagram.New(&client),
-		tiktok.New(&client),
+		youtubeDownloader,
+		instagramDownloader,
+		tiktokDownloader,
+	})
+	httpHandler := handlers.NewHttpHandler([]downloadersService.IDownloader{
+		youtubeDownloader,
+		instagramDownloader,
+		tiktokDownloader,
 	})
 	handler.SetupRoutes(bh)
 
@@ -102,7 +109,7 @@ func main() {
 
 		server := fasthttp.Server{
 			LogAllErrors: false,
-			Handler:      youtubeDownloader.Handler,
+			Handler:      httpHandler.Handler,
 		}
 
 		utils.Log.Fatal(server.ListenAndServe(":" + strconv.Itoa(cfg.Application.Port)))

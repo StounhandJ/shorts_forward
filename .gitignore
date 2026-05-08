@@ -1,4 +1,5 @@
 .env
 .vscode
+.idea
 *__debug_bin*
 config/config.local.yaml

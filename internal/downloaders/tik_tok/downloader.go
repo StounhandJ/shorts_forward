@@ -1,6 +1,8 @@
 package tiktok
 
 import (
+	"errors"
+	"io"
 	"net/http"
 	"strings"
 
@@ -37,4 +39,8 @@ func (d downloader) Download(url string) (*downloaders.Video, error) {
 
 func (downloader) Valid(url string) bool {
 	return strings.Contains(url, "tiktok.com/")
+}
+
+func (d downloader) GetReader(url string) (io.ReadCloser, int64, error) {
+	return nil, 0, errors.New("not implemented")
 }

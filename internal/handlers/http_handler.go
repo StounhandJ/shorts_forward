@@ -1,4 +1,4 @@
-package youtube
+package handlers
 
 import (
 	"errors"
@@ -9,10 +9,22 @@ import (
 	"strconv"
 	"strings"
 
+	downloadersService "github.com/StounhandJ/shorts_forward/internal/downloaders"
+	"github.com/StounhandJ/shorts_forward/internal/utils"
 	"github.com/valyala/fasthttp"
 )
 
-func (d downloader) Handler(ctx *fasthttp.RequestCtx) {
+type httpHandler struct {
+	downloaders []downloadersService.IDownloader
+}
+
+func NewHttpHandler(downloaders []downloadersService.IDownloader) httpHandler {
+	return httpHandler{
+		downloaders: downloaders,
+	}
+}
+
+func (h httpHandler) Handler(ctx *fasthttp.RequestCtx) {
 	// получаем параметр src
 	src := string(ctx.QueryArgs().Peek("src"))
 	if src == "" {
@@ -23,9 +35,27 @@ func (d downloader) Handler(ctx *fasthttp.RequestCtx) {
 		return
 	}
 
-	targetURL, err := url.Parse(src)
+	_, err := url.Parse(src)
 	if err != nil {
 		ctx.Error("invalid src", http.StatusBadRequest)
+
+		return
+	}
+
+	var downloader downloadersService.IDownloader
+
+	for _, d := range h.downloaders {
+		if d.Valid(src) {
+			downloader = d
+
+			break
+		}
+	}
+
+	// Загрузчик не найден
+	if downloader == nil {
+		ctx.Error("поддерживается только TikTok, Instagram, YouTube", http.StatusBadRequest)
+
 		return
 	}
 
@@ -33,21 +63,11 @@ func (d downloader) Handler(ctx *fasthttp.RequestCtx) {
 	ctx.Response.Header.Set("Content-Disposition", `inline; filename="ffffe11cdc4.mp4"`)
 	ctx.Response.Header.Set("Accept-Ranges", "bytes")
 
-	youtubeVideo, err := d.client.GetVideo(targetURL.String())
+	videoReader, contentLength, err := downloader.GetReader(src)
 	if err != nil {
-		ctx.Error("error get video", http.StatusBadGateway)
-		return
-	}
-
-	formats := youtubeVideo.Formats.WithAudioChannels().Type("video/mp4")
-	if len(formats) == 0 {
-		ctx.Error("not found video", http.StatusBadGateway)
-		return
-	}
-
-	videoReader, contentLength, err := d.client.GetStream(youtubeVideo, &formats[0])
-	if err != nil {
+		utils.Log.Error(err)
 		ctx.Error("get video stream", http.StatusBadGateway)
+
 		return
 	}
 
@@ -59,6 +79,7 @@ func (d downloader) Handler(ctx *fasthttp.RequestCtx) {
 		rc := &readCloserOnEOF{r: videoReader, c: videoReader}
 		// fasthttp.SetBodyStream принимает io.Reader и int (size)
 		ctx.SetBodyStream(rc, int(contentLength))
+
 		return
 	}
 
