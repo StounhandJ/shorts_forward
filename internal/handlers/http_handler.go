@@ -31,6 +31,7 @@ func (h httpHandler) Handler(ctx *fasthttp.RequestCtx) {
 		ctx.Response.Header.Set("Content-Type", "image/webp")
 		ctx.Response.Header.Set("Content-Disposition", "inline")
 		ctx.SendFile("./assets/gorila.webp")
+		utils.Log.Error("Missing 'src' parameter")
 
 		return
 	}
@@ -38,6 +39,7 @@ func (h httpHandler) Handler(ctx *fasthttp.RequestCtx) {
 	_, err := url.Parse(src)
 	if err != nil {
 		ctx.Error("invalid src", http.StatusBadRequest)
+		utils.Log.Error("Invalid src")
 
 		return
 	}
@@ -55,18 +57,21 @@ func (h httpHandler) Handler(ctx *fasthttp.RequestCtx) {
 	// Загрузчик не найден
 	if downloader == nil {
 		ctx.Error("поддерживается только TikTok, Instagram, YouTube", http.StatusBadRequest)
+		utils.Log.Error("Not supported downloader")
 
 		return
 	}
 
+	utils.Log.Info("Downloading ", src)
+
 	ctx.Response.Header.Add("Content-Type", "video/mp4")
-	ctx.Response.Header.Set("Content-Disposition", `inline; filename="ffffe11cdc4.mp4"`)
+	ctx.Response.Header.Set("Content-Disposition", `inline; filename="jsdsdgg.mp4"`)
 	ctx.Response.Header.Set("Accept-Ranges", "bytes")
 
 	videoReader, contentLength, err := downloader.GetReader(src)
 	if err != nil {
-		utils.Log.Error(err)
 		ctx.Error("get video stream", http.StatusBadGateway)
+		utils.Log.Error(err)
 
 		return
 	}
@@ -79,6 +84,7 @@ func (h httpHandler) Handler(ctx *fasthttp.RequestCtx) {
 		rc := &readCloserOnEOF{r: videoReader, c: videoReader}
 		// fasthttp.SetBodyStream принимает io.Reader и int (size)
 		ctx.SetBodyStream(rc, int(contentLength))
+		utils.Log.Info("Full Content length:", contentLength)
 
 		return
 	}
@@ -91,6 +97,8 @@ func (h httpHandler) Handler(ctx *fasthttp.RequestCtx) {
 		// обязательный заголовок для 416:
 		ctx.Response.Header.Set("Content-Range", fmt.Sprintf("bytes */%d", contentLength))
 		_ = videoReader.Close()
+		utils.Log.Error(err)
+
 		return
 	}
 
@@ -110,6 +118,8 @@ func (h httpHandler) Handler(ctx *fasthttp.RequestCtx) {
 		limited := io.LimitReader(videoReader, length)
 		rc := &readCloserOnEOF{r: limited, c: videoReader}
 		ctx.SetBodyStream(rc, int(length))
+		utils.Log.Info("Content length:", contentLength)
+
 		return
 	}
 
@@ -118,6 +128,8 @@ func (h httpHandler) Handler(ctx *fasthttp.RequestCtx) {
 		if _, err := io.CopyN(io.Discard, videoReader, start); err != nil {
 			_ = videoReader.Close()
 			ctx.Error("failed to skip bytes", fasthttp.StatusBadGateway)
+			utils.Log.Error(err)
+
 			return
 		}
 	}
