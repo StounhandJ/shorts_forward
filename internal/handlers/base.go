@@ -144,7 +144,7 @@ func (h handler) MessageVideo(ctx *th.Context, update telego.Update) error {
 	if err != nil {
 		telegramUtils.DeleteMessage(ctx, update, loadMessage)
 
-		telegramUtils.SendMessage(ctx, false, true, update, sorryText)
+		telegramUtils.SendMessage(ctx, false, true, update, fmt.Sprintf("%s\n%s", sorryText, metadataVideo.VideoURL))
 	}
 
 	return nil
