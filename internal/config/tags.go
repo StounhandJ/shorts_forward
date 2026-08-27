@@ -106,7 +106,7 @@ func parseFlags(c any, opts parseOptions) ([]cli.Flag, error) {
 
 	v := reflect.ValueOf(c)
 
-	if v.Kind() != reflect.Ptr {
+	if v.Kind() != reflect.Pointer {
 		return nil, errors.New("config must be pointer")
 	}
 
@@ -262,7 +262,7 @@ func parseField(
 		Hidden:     cliHidden,
 	}
 
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Pointer {
 		v = v.Elem()
 	}
 
@@ -332,7 +332,7 @@ func parseField(
 
 		return parseFlags(iface, newOpts)
 
-	case reflect.TypeOf(time.Duration(0)).Kind():
+	case reflect.TypeFor[time.Duration]().Kind():
 		dur := time.Duration(0)
 		iface := addr.Convert(reflect.TypeOf(&dur)).Interface()
 

@@ -43,7 +43,7 @@ func parseConfig(c any, path string, opts parseOptions) error {
 	return CommonHelp("invest", "Запустить сервер", "", c, opts)
 }
 
-func readFile(cfg interface{}, path string) error {
+func readFile(cfg any, path string) error {
 	f, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("failed to open file %s: %w", path, err)
@@ -70,7 +70,7 @@ func readFile(cfg interface{}, path string) error {
 // - целое число (интерпретируем как секунды)
 // - числовой тип (float) - тоже как секунды с дробной частью
 // nolint
-func (d *duration) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (d *duration) UnmarshalYAML(unmarshal func(any) error) error {
 	// 1) Попробовать как строку ("5m")
 	var s string
 	if err := unmarshal(&s); err == nil {
@@ -113,6 +113,6 @@ func (d *duration) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 // MarshalYAML - полезно при сериализации обратно в YAML (запишет строку "5m0s").
 // nolint
-func (d duration) MarshalYAML() (interface{}, error) {
+func (d duration) MarshalYAML() (any, error) {
 	return time.Duration(d).String(), nil
 }

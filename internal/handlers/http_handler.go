@@ -109,7 +109,7 @@ func (h httpHandler) Handler(ctx *fasthttp.RequestCtx) {
 	ctx.Response.Header.Set("Content-Length", strconv.FormatInt(length, 10))
 
 	// Попытаемся использовать Seek, если поддерживается
-	if seeker, ok := interface{}(videoReader).(io.Seeker); ok {
+	if seeker, ok := any(videoReader).(io.Seeker); ok {
 		_, seekErr := seeker.Seek(start, io.SeekStart)
 		if seekErr != nil {
 			// fallback: читаем и отбросим

@@ -17,6 +17,7 @@ import (
 	"github.com/StounhandJ/shorts_forward/internal/downloaders/youtube"
 	"github.com/StounhandJ/shorts_forward/internal/handlers"
 	"github.com/StounhandJ/shorts_forward/internal/utils"
+	"github.com/StounhandJ/shorts_forward/internal/ytdlp"
 	"github.com/mymmrac/telego"
 	th "github.com/mymmrac/telego/telegohandler"
 	"github.com/valyala/fasthttp"
@@ -71,9 +72,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	youtubeDownloader := youtube.New(&client, cfg.Application.Domain)
-	instagramDownloader := instagram.New(&client, cfg.Application.Domain)
-	tiktokDownloader := tiktok.New(&client)
+	yt := ytdlp.New("yt-dlp")
+
+	youtubeDownloader := youtube.New(&client, cfg.Application.Domain, yt)
+	instagramDownloader := instagram.New(&client, cfg.Application.Domain, yt)
+	tiktokDownloader := tiktok.New(&client, cfg.Application.Domain, yt)
 	handler := handlers.NewHandler([]downloadersService.IDownloader{
 		youtubeDownloader,
 		instagramDownloader,

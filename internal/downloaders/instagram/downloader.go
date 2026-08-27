@@ -2,89 +2,83 @@ package instagram
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/StounhandJ/shorts_forward/internal/downloaders"
-	"github.com/StounhandJ/shorts_forward/internal/utils"
+	"github.com/StounhandJ/shorts_forward/internal/ytdlp"
 )
 
 type downloader struct {
 	client *http.Client
 	domain string
+	yt     *ytdlp.Client
 }
 
-func New(client *http.Client, domain string) downloaders.IDownloader {
+func New(client *http.Client, domain string, yt *ytdlp.Client) downloaders.IDownloader {
 	return &downloader{
 		client: client,
 		domain: domain,
+		yt:     yt,
 	}
 }
 
 func (d downloader) Download(url string) (*downloaders.Video, error) {
-	video, err := d.download(url)
+	info, err := d.yt.GetInfo(context.Background(), url)
 	if err != nil {
 		return nil, err
 	}
 
-	video.VideoURL = fmt.Sprintf("%s/video?src=%s", d.domain, url)
-
-	return video, nil
-}
-
-func (d downloader) download(url string) (*downloaders.Video, error) {
-	req, err := http.NewRequestWithContext(context.TODO(), "GET", url, nil)
-	if err != nil {
-		return nil, err
+	mimeType := "video/mp4"
+	if info.Ext != "" {
+		mimeType = "video/" + info.Ext
 	}
 
-	req.Header.Add("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 YaBrowser/25.10.0.0 Safari/537.36")
-	req.Header.Add("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
-
-	resp, err := d.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			utils.Log.Error(err)
-		}
-	}()
-
-	data, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
+	videoURL := info.URL
+	if d.domain != "" {
+		videoURL = fmt.Sprintf("%s/video?src=%s", d.domain, url)
 	}
 
-	video, ok := extractFirstVideoURL(string(data))
-	if !ok {
-		return nil, errors.New("html не расшифрован")
-	}
-
-	return video, nil
+	return &downloaders.Video{
+		Title:        info.Title,
+		VideoURL:     videoURL,
+		ThumbnailURL: info.Thumbnail,
+		MimeType:     mimeType,
+		ViewCount:    info.ViewCount,
+		LikeCount:    info.LikeCount,
+		Duration:     int(info.Duration),
+	}, nil
 }
 
 func (downloader) Valid(url string) bool {
-	return strings.Contains(url, "www.instagram.com/")
+	return strings.Contains(url, "instagram.com/")
 }
 
 func (d downloader) GetReader(url string) (io.ReadCloser, int64, error) {
-	video, err := d.download(url)
+	info, err := d.yt.GetInfo(context.Background(), url)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	resp, err := http.Get(video.VideoURL)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, info.URL, nil)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	httpClient := d.client
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		resp.Body.Close()
-
 		return nil, 0, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
 

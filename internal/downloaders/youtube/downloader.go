@@ -1,53 +1,54 @@
 package youtube
 
 import (
-	"errors"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/StounhandJ/shorts_forward/internal/downloaders"
-	"github.com/kkdai/youtube/v2"
+	"github.com/StounhandJ/shorts_forward/internal/ytdlp"
 )
 
 type downloader struct {
-	client *youtube.Client
+	client *http.Client
 	domain string
+	yt     *ytdlp.Client
 }
 
-func New(client *http.Client, domain string) downloaders.IDownloader {
+func New(client *http.Client, domain string, yt *ytdlp.Client) downloaders.IDownloader {
 	return &downloader{
-		client: &youtube.Client{
-			HTTPClient: client,
-		},
+		client: client,
 		domain: domain,
+		yt:     yt,
 	}
 }
 
 func (d downloader) Download(url string) (*downloaders.Video, error) {
-	youtubeVideo, err := d.client.GetVideo(url)
+	info, err := d.yt.GetInfo(context.Background(), url)
 	if err != nil {
 		return nil, err
 	}
 
-	formats := youtubeVideo.Formats.WithAudioChannels().Type("video/mp4")
-	if len(formats) == 0 {
-		return nil, errors.New("не найдено VideoURL")
+	mimeType := "video/mp4"
+	if info.Ext != "" {
+		mimeType = "video/" + info.Ext
 	}
 
-	if len(youtubeVideo.Thumbnails) == 0 {
-		return nil, errors.New("не найдено ThumbnailURL")
+	videoURL := info.URL
+	if d.domain != "" {
+		videoURL = fmt.Sprintf("%s/video?src=%s", d.domain, url)
 	}
 
 	return &downloaders.Video{
-		Title:        youtubeVideo.Title,
-		VideoURL:     fmt.Sprintf("%s/video?src=%s", d.domain, url),
-		ThumbnailURL: youtubeVideo.Thumbnails[len(youtubeVideo.Thumbnails)-1].URL,
-		MimeType:     "video/mp4",
-		ViewCount:    youtubeVideo.Views,
-		LikeCount:    0, // Нельзя получить через API
-		Duration:     int(youtubeVideo.Duration / 1000000000),
+		Title:        info.Title,
+		VideoURL:     videoURL,
+		ThumbnailURL: info.Thumbnail,
+		MimeType:     mimeType,
+		ViewCount:    info.ViewCount,
+		LikeCount:    info.LikeCount,
+		Duration:     int(info.Duration),
 	}, nil
 }
 
@@ -56,20 +57,30 @@ func (downloader) Valid(url string) bool {
 }
 
 func (d downloader) GetReader(url string) (io.ReadCloser, int64, error) {
-	youtubeVideo, err := d.client.GetVideo(url)
+	info, err := d.yt.GetInfo(context.Background(), url)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	formats := youtubeVideo.Formats.WithAudioChannels().Type("video/mp4")
-	if len(formats) == 0 {
-		return nil, 0, err
-	}
-
-	videoReader, contentLength, err := d.client.GetStream(youtubeVideo, &formats[0])
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, info.URL, nil)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return videoReader, contentLength, nil
+	httpClient := d.client
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		resp.Body.Close()
+		return nil, 0, fmt.Errorf("unexpected status: %s", resp.Status)
+	}
+
+	return resp.Body, resp.ContentLength, nil
 }
