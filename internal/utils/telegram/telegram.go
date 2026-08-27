@@ -163,7 +163,7 @@ func SendMessage(ctx *th.Context, isChat, isSendReplay bool, update telego.Updat
 	return msg.MessageID
 }
 
-// Редактирование текущего сообщения
+// EditCurrentMessage Редактирование текущего сообщения
 func EditCurrentMessage(ctx *th.Context, update telego.Update, text string, args ...any) {
 	if (update.Message != nil && update.Message.Photo != nil) ||
 		(update.CallbackQuery != nil && update.CallbackQuery.Message.Message().Photo != nil) {
@@ -173,10 +173,10 @@ func EditCurrentMessage(ctx *th.Context, update telego.Update, text string, args
 		return
 	}
 
-	EditMessage(ctx, update, GetCurrentMessageID(update), text, args...)
+	_ = EditMessage(ctx, update, GetCurrentMessageID(update), text, args...)
 }
 
-// Редактирование указанного сообщения
+// EditMessage Редактирование указанного сообщения
 func EditMessage(ctx *th.Context, update telego.Update, messageID int, text string, args ...any) error {
 	if messageID == 0 {
 		return nil
@@ -184,7 +184,7 @@ func EditMessage(ctx *th.Context, update telego.Update, messageID int, text stri
 
 	var inputFile *InputVideo
 
-	meesageParam := &telego.EditMessageTextParams{
+	messageParam := &telego.EditMessageTextParams{
 		ChatID:    tu.ID(GetUserID(update)),
 		MessageID: messageID,
 		Text:      text,
@@ -198,7 +198,7 @@ func EditMessage(ctx *th.Context, update telego.Update, messageID int, text stri
 		// nolint
 		switch v.(type) {
 		case *telego.InlineKeyboardMarkup:
-			meesageParam.ReplyMarkup = v.(*telego.InlineKeyboardMarkup)
+			messageParam.ReplyMarkup = v.(*telego.InlineKeyboardMarkup)
 		case InputVideo:
 			file := v.(InputVideo)
 			inputFile = &file
@@ -206,18 +206,19 @@ func EditMessage(ctx *th.Context, update telego.Update, messageID int, text stri
 	}
 
 	if inputFile == nil {
-		_, err := ctx.Bot().EditMessageText(ctx, meesageParam)
+		_, err := ctx.Bot().EditMessageText(ctx, messageParam)
+
 		return err
 	}
 
 	_, err := ctx.Bot().EditMessageMedia(ctx, &telego.EditMessageMediaParams{
-		ChatID:      meesageParam.ChatID,
-		MessageID:   meesageParam.MessageID,
-		ReplyMarkup: meesageParam.ReplyMarkup,
+		ChatID:      messageParam.ChatID,
+		MessageID:   messageParam.MessageID,
+		ReplyMarkup: messageParam.ReplyMarkup,
 		Media: &telego.InputMediaVideo{
 			Type:      telego.MediaTypeVideo,
-			Caption:   truncateText(meesageParam.Text, 1024),
-			ParseMode: meesageParam.ParseMode,
+			Caption:   truncateText(messageParam.Text, 1024),
+			ParseMode: messageParam.ParseMode,
 			Media: telego.InputFile{
 				URL: inputFile.URL,
 			},

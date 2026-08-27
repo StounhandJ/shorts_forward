@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
@@ -35,21 +33,6 @@ func main() {
 	utils.InitLogger(cfg.Application.LogLevel)
 	//---------------//
 
-	//------ HTTP клиент для отправки запросов ------//
-	client := http.Client{}
-
-	if cfg.Application.ProxyURL != "" {
-		proxyURL, err := url.Parse(cfg.Application.ProxyURL)
-		if err != nil {
-			utils.Log.Panic(err)
-		}
-
-		client.Transport = &http.Transport{
-			Proxy: http.ProxyURL(proxyURL), // прокси
-		}
-	}
-	//---------------//
-
 	//------ TELEGRAM бот ------//
 	utils.Log.Info("Подключение TG-бота")
 
@@ -74,9 +57,9 @@ func main() {
 
 	yt := ytdlp.New("yt-dlp")
 
-	youtubeDownloader := youtube.New(&client, cfg.Application.Domain, yt)
-	instagramDownloader := instagram.New(&client, cfg.Application.Domain, yt)
-	tiktokDownloader := tiktok.New(&client, cfg.Application.Domain, yt)
+	youtubeDownloader := youtube.New(cfg.Application.Domain, yt)
+	instagramDownloader := instagram.New(cfg.Application.Domain, yt)
+	tiktokDownloader := tiktok.New(cfg.Application.Domain, yt)
 	handler := handlers.NewHandler([]downloadersService.IDownloader{
 		youtubeDownloader,
 		instagramDownloader,
@@ -87,6 +70,7 @@ func main() {
 		instagramDownloader,
 		tiktokDownloader,
 	})
+
 	handler.SetupRoutes(bh)
 
 	user, err := bot.GetMe(context.Background())

@@ -55,6 +55,7 @@ func (h handler) InlineVideo(ctx *th.Context, query telego.InlineQuery) error {
 	metadataVideo, err := downloader.Download(url)
 	if err != nil {
 		utils.Log.Error(err)
+
 		results := []telego.InlineQueryResult{}
 
 		return ctx.Bot().AnswerInlineQuery(ctx, &telego.AnswerInlineQueryParams{
@@ -70,6 +71,7 @@ func (h handler) InlineVideo(ctx *th.Context, query telego.InlineQuery) error {
 	}
 
 	mainInfo := metadataVideo.MainInfo()
+
 	return ctx.Bot().AnswerInlineQuery(ctx, &telego.AnswerInlineQueryParams{
 		InlineQueryID: query.ID,
 		Results: []telego.InlineQueryResult{

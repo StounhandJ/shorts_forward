@@ -96,7 +96,9 @@ func (h httpHandler) Handler(ctx *fasthttp.RequestCtx) {
 		ctx.SetStatusCode(fasthttp.StatusRequestedRangeNotSatisfiable)
 		// обязательный заголовок для 416:
 		ctx.Response.Header.Set("Content-Range", fmt.Sprintf("bytes */%d", contentLength))
+
 		_ = videoReader.Close()
+
 		utils.Log.Error(err)
 
 		return
@@ -115,6 +117,7 @@ func (h httpHandler) Handler(ctx *fasthttp.RequestCtx) {
 			// fallback: читаем и отбросим
 			_, _ = io.CopyN(io.Discard, videoReader, start)
 		}
+
 		limited := io.LimitReader(videoReader, length)
 		rc := &readCloserOnEOF{r: limited, c: videoReader}
 		ctx.SetBodyStream(rc, int(length))
@@ -127,12 +130,14 @@ func (h httpHandler) Handler(ctx *fasthttp.RequestCtx) {
 	if start > 0 {
 		if _, err := io.CopyN(io.Discard, videoReader, start); err != nil {
 			_ = videoReader.Close()
+
 			ctx.Error("failed to skip bytes", fasthttp.StatusBadGateway)
 			utils.Log.Error(err)
 
 			return
 		}
 	}
+
 	limited := io.LimitReader(videoReader, length)
 	rc := &readCloserOnEOF{r: limited, c: videoReader}
 	ctx.SetBodyStream(rc, int(length))
@@ -147,6 +152,7 @@ func parseRange(s string, size int64) (start, end int64, err error) {
 	if !strings.HasPrefix(s, prefix) {
 		return 0, 0, errors.New("invalid range")
 	}
+
 	r := strings.TrimSpace(s[len(prefix):])
 	if r == "" {
 		return 0, 0, errors.New("empty range")
@@ -158,11 +164,14 @@ func parseRange(s string, size int64) (start, end int64, err error) {
 		if err != nil || n <= 0 {
 			return 0, 0, errors.New("invalid suffix range")
 		}
+
 		if n > size {
 			n = size
 		}
+
 		start = size - n
 		end = size - 1
+
 		return start, end, nil
 	}
 
@@ -174,10 +183,12 @@ func parseRange(s string, size int64) (start, end int64, err error) {
 	if parts[0] == "" {
 		return 0, 0, errors.New("invalid start")
 	}
+
 	s0, err := strconv.ParseInt(parts[0], 10, 64)
 	if err != nil || s0 < 0 {
 		return 0, 0, errors.New("invalid start")
 	}
+
 	start = s0
 
 	if parts[1] == "" {
@@ -188,15 +199,18 @@ func parseRange(s string, size int64) (start, end int64, err error) {
 		if err != nil || e0 < 0 {
 			return 0, 0, errors.New("invalid end")
 		}
+
 		end = e0
 	}
 
 	if start > end || start >= size {
 		return 0, 0, errors.New("range unsatisfiable")
 	}
+
 	if end >= size {
 		end = size - 1
 	}
+
 	return start, end, nil
 }
 
@@ -211,5 +225,6 @@ func (r *readCloserOnEOF) Read(p []byte) (int, error) {
 	if err == io.EOF && r.c != nil {
 		_ = r.c.Close()
 	}
+
 	return n, err
 }
