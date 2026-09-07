@@ -260,7 +260,7 @@ func (c *Client) GetInfo(
 		"--ignore-config",
 		"--no-playlist",
 		"--no-warnings",
-		"-j",
+		"--print-json",
 		"--",
 		targetURL,
 	)
@@ -274,22 +274,31 @@ func (c *Client) GetInfo(
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf(
-			"yt-dlp metadata failed: %w: %s",
-			err,
-			stderr.String(),
-		)
+	    return nil, fmt.Errorf(
+	        "yt-dlp metadata failed: %w: %s",
+	        err,
+	        stderr.String(),
+	    )
 	}
-
+	
+	output := bytes.TrimSpace(stdout.Bytes())
+	if len(output) == 0 {
+	    return nil, fmt.Errorf(
+	        "yt-dlp returned empty JSON output: %s",
+	        stderr.String(),
+	    )
+	}
+	
 	var info Info
-
-	if err := json.Unmarshal(stdout.Bytes(), &info); err != nil {
-		return nil, fmt.Errorf(
-			"failed to parse yt-dlp JSON output: %w",
-			err,
-		)
+	if err := json.Unmarshal(output, &info); err != nil {
+	    return nil, fmt.Errorf(
+	        "failed to parse yt-dlp JSON output: %w; stdout=%q; stderr=%q",
+	        err,
+	        truncate(string(output), 4096),
+	        truncate(stderr.String(), 4096),
+	    )
 	}
-
+	
 	cachedInfo := cloneInfo(&info)
 
 	c.mu.Lock()
