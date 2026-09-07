@@ -260,7 +260,7 @@ func (c *Client) GetInfo(
 		"--ignore-config",
 		"--no-playlist",
 		"--no-warnings",
-		"--print-json",
+		"--dump-single-json",
 		"--",
 		targetURL,
 	)
@@ -840,4 +840,12 @@ func (b *limitedBuffer) String() string {
 	}
 
 	return result
+}
+
+func truncate(s string, max int) string {
+    if len(s) <= max {
+        return s
+    }
+
+    return s[:max] + "..."
 }
