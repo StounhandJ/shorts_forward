@@ -540,9 +540,9 @@ func (c *Client) downloadFile(
 		}
 	}()
 
-	outputPath := filepath.Join(
+	outputTemplate := filepath.Join(
 		tmpDir,
-		"video.mp4",
+		"video.%(ext)s",
 	)
 
 	cmd := exec.CommandContext(
@@ -555,7 +555,7 @@ func (c *Client) downloadFile(
 		"--no-progress",
 		"--force-overwrites",
 		"-o",
-		outputPath,
+		outputTemplate,
 		"--",
 		targetURL,
 	)
@@ -570,6 +570,15 @@ func (c *Client) downloadFile(
 	if err := cmd.Run(); err != nil {
 		return nil, fmt.Errorf(
 			"yt-dlp download failed: %w: %s",
+			err,
+			stderr.String(),
+		)
+	}
+
+	outputPath, err := findDownloadedFile(tmpDir)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"%w: %s",
 			err,
 			stderr.String(),
 		)
@@ -857,4 +866,51 @@ func truncate(s string, max int) string {
     }
 
     return s[:max] + "..."
+}
+
+func findDownloadedFile(dir string) (string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return "", fmt.Errorf(
+			"failed to read download directory: %w",
+			err,
+		)
+	}
+
+	var result string
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		name := entry.Name()
+
+		if !strings.HasPrefix(name, "video.") {
+			continue
+		}
+
+		if strings.HasSuffix(name, ".part") ||
+			strings.HasSuffix(name, ".ytdl") ||
+			strings.HasSuffix(name, ".temp") {
+			continue
+		}
+
+		if result != "" {
+			return "", fmt.Errorf(
+				"multiple downloaded files found in %s",
+				dir,
+			)
+		}
+
+		result = filepath.Join(dir, name)
+	}
+
+	if result == "" {
+		return "", errors.New(
+			"yt-dlp completed successfully, but downloaded file was not found",
+		)
+	}
+
+	return result, nil
 }
