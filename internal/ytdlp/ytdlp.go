@@ -19,7 +19,7 @@ import (
 const (
 	defaultTTL            = 5 * time.Minute
 	defaultDownloadTTL    = 15 * time.Minute
-	maxStderrSize         = 512 * 1024
+	maxStderrSize         = 64 * 1024
 	maxMetadataCacheItems = 100
 )
 
@@ -268,7 +268,6 @@ func (c *Client) GetInfo(
 	var stdout limitedBuffer
 	var stderr limitedBuffer
 
-	stdout.limit = maxStderrSize
 	stderr.limit = maxStderrSize
 
 	cmd.Stdout = &stdout
