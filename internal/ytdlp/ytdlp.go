@@ -19,6 +19,7 @@ import (
 const (
 	defaultTTL            = 5 * time.Minute
 	defaultDownloadTTL    = 15 * time.Minute
+	maxStdoutSize         = 2 * 1024 * 1024
 	maxStderrSize         = 64 * 1024
 	maxMetadataCacheItems = 100
 )
@@ -259,7 +260,9 @@ func (c *Client) GetInfo(
 		binPath,
 		"--ignore-config",
 		"--no-playlist",
+		"--skip-download",
 		"--no-warnings",
+		"--simulate",
 		"--dump-single-json",
 		"--",
 		targetURL,
@@ -267,36 +270,42 @@ func (c *Client) GetInfo(
 
 	var stdout limitedBuffer
 	var stderr limitedBuffer
-
+	
+	stdout.limit = maxStdoutSize
 	stderr.limit = maxStderrSize
-
+	
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-
+	
 	if err := cmd.Run(); err != nil {
-	    return nil, fmt.Errorf(
-	        "yt-dlp metadata failed: %w: %s",
-	        err,
-	        stderr.String(),
-	    )
+		return nil, fmt.Errorf(
+			"yt-dlp metadata failed: %w: stderr=%s; stdout=%s",
+			err,
+			truncate(stderr.String(), 4096),
+			truncate(stdout.String(), 4096),
+		)
 	}
 	
 	output := bytes.TrimSpace(stdout.Bytes())
+	
 	if len(output) == 0 {
-	    return nil, fmt.Errorf(
-	        "yt-dlp returned empty JSON output: %s",
-	        stderr.String(),
-	    )
+		return nil, fmt.Errorf(
+			"yt-dlp returned empty JSON output: exit=0; url=%q; stdout=%q; stderr=%q",
+			targetURL,
+			truncate(stdout.String(), 4096),
+			truncate(stderr.String(), 4096),
+		)
 	}
 	
 	var info Info
+	
 	if err := json.Unmarshal(output, &info); err != nil {
-	    return nil, fmt.Errorf(
-	        "failed to parse yt-dlp JSON output: %w; stdout=%q; stderr=%q",
-	        err,
-	        truncate(string(output), 4096),
-	        truncate(stderr.String(), 4096),
-	    )
+		return nil, fmt.Errorf(
+			"failed to parse yt-dlp JSON output: %w; stdout=%q; stderr=%q",
+			err,
+			truncate(string(output), 4096),
+			truncate(stderr.String(), 4096),
+		)
 	}
 	
 	cachedInfo := cloneInfo(&info)
