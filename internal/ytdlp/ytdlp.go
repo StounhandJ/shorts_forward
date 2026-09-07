@@ -19,7 +19,7 @@ import (
 const (
 	defaultTTL            = 5 * time.Minute
 	defaultDownloadTTL    = 15 * time.Minute
-	maxStderrSize         = 64 * 1024
+	maxStderrSize         = 512 * 1024
 	maxMetadataCacheItems = 100
 )
 
